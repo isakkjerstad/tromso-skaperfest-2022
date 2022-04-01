@@ -266,6 +266,35 @@ function makeLives (num: number) {
         tiles.placeOnRandomTile(myLife, sprites.dungeon.floorDark1)
     }
 }
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (ammo > 0) {
+        xProjVel = Math.constrain(controller.dx() * 100, -100, 100)
+        yProjVel = Math.constrain(controller.dy() * 100, -100, 100)
+        if (xProjVel == 0 && yProjVel == 0) {
+            xProjVel = 100
+        }
+        myProjectile = sprites.createProjectileFromSprite(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . 4 4 . . . . . . . 
+            . . . . . . 4 5 5 4 . . . . . . 
+            . . . . . . 2 5 5 2 . . . . . . 
+            . . . . . . . 2 2 . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, mySprite, xProjVel, yProjVel)
+        ammo += -1
+        music.pewPew.play()
+    }
+})
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Lives, function (sprite, otherSprite) {
     otherSprite.destroy()
     info.changeLifeBy(1)
@@ -420,6 +449,7 @@ scene.onOverlapTile(SpriteKind.Player, sprites.dungeon.doorLockedSouth, function
         sprites.destroyAllSpritesOfKind(SpriteKind.Food)
         setWorld1()
     } else {
+        game.splash("You did not complete the level!", "")
         game.over(false)
     }
 })
@@ -600,9 +630,10 @@ function setWorld1 () {
     scene.setBackgroundColor(6)
     tiles.setCurrentTilemap(tilemap`level1`)
     tiles.placeOnRandomTile(mySprite, sprites.dungeon.stairWest)
-    makeEnemies(5)
-    makeTreasures(20)
-    makeLives(2)
+    makeEnemies(randint(3, 7))
+    makeTreasures(randint(10, 30))
+    makeLives(randint(0, 3))
+    ammo = 5
 }
 info.onLifeZero(function () {
     game.over(false)
@@ -613,11 +644,21 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, function (sprite, otherSpr
     nTreasures += -1
     music.baDing.play()
 })
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
+    sprite.destroy()
+    otherSprite.destroy(effects.ashes, 500)
+    info.changeScoreBy(10)
+    music.buzzer.play()
+})
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
     otherSprite.destroy()
     info.changeLifeBy(-1)
     music.zapped.play()
 })
+let myProjectile: Sprite = null
+let yProjVel = 0
+let xProjVel = 0
+let ammo = 0
 let myLife: Sprite = null
 let myEnemy: Sprite = null
 let myTreasure: Sprite = null
@@ -647,4 +688,5 @@ nTreasures = 0
 info.startCountdown(120)
 info.setScore(0)
 info.setLife(3)
+music.setVolume(40)
 setWorld1()
